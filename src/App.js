@@ -1,54 +1,40 @@
 import React, { Component } from 'react';
 import './App.css';
-import todoList from './todos.json';
 import { TodoList } from './TodoList';
-import { Link, Route, Switch } from 'react-router-dom'
+import { Link, Route, Switch , withRouter} from 'react-router-dom'
+import { connect } from 'react-redux';
+import { markComplete , addTodo , deleteTodo , clearCompleted } from './actions'
+
 
 class App extends Component {
-  state = {
-    todos: todoList,
-    currentID: todoList.length,
-  }
+  // state = {
+  //   todos: todoList,
+  //   currentID: todoList.length,
+  // }
 
   inputText = (event) => {
     if (event.keyCode === 13){
-      const newID = this.state.currentID + 1;
-      let newEntry = {
-        "userId": 1,
-        "id": newID,
-        "title": event.target.value,
-        "completed": false
-      }
-
-      this.setState({
-        todos: this.state.todos.concat(newEntry),
-        currentID: newID         
-      });
+      this.props.addTodo(event.target.value)
       event.target.value = '';
     }
   }
 
   toggleCheck = (event) => {
-    let newTodos = this.state.todos.slice();
-    let index = newTodos.findIndex( todo => todo.id === Number(event.target.name) )
-    newTodos[index].completed = !newTodos[index].completed;
-    this.setState({todos: newTodos})
+    this.props.markComplete(event.target.name)
   }
 
   deleteOne = (event) => {
-    let newTodos = this.state.todos.filter( todo => todo.id !== Number(event.target.name))
-    this.setState({todos: newTodos})
+    this.props.deleteTodo(event.target.name)
   }
 
   deleteAll = (event) => {
-    let newTodos = this.state.todos.filter( todo => todo.completed === false);
-    this.setState({todos: newTodos})
+    this.props.clearCompleted();
   }
 
   allTodos = () => {
     return (
       <TodoList 
-        todos={this.state.todos}
+        todos={this.props.todos}
         toggleCheck={this.toggleCheck}
         deleteOne={this.deleteOne}
       />
@@ -56,7 +42,7 @@ class App extends Component {
   }
 
   activeTodos = () => {
-    let active = this.state.todos.filter( todo => todo.completed === false );
+    let active = this.props.todos.filter( todo => todo.completed === false );
     return (
       <TodoList 
         todos={active}
@@ -67,7 +53,7 @@ class App extends Component {
   }
 
   completedTodos = () => {
-    let completed = this.state.todos.filter( todo => todo.completed === true );
+    let completed = this.props.todos.filter( todo => todo.completed === true );
     return (
       <TodoList 
         todos={completed}
@@ -98,7 +84,7 @@ class App extends Component {
           </Switch>
         </section>
         <footer className="footer">
-				  <span className="todo-count"><strong>0</strong> item(s) left</span>
+				  <span className="todo-count"><strong>{this.props.todos.length}</strong> item(s) left</span>
           <ul className="filters">
            <li>
             <Link to="/">
@@ -123,4 +109,26 @@ class App extends Component {
   }
 }
 
-export default App;
+const mapStateToProps = (state) => ({
+  todos: state.todos,
+  currentID: state.currentID
+});
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    markComplete: (id) => {
+      dispatch(markComplete(id))
+    },
+    addTodo: (todo) => {
+      dispatch(addTodo(todo))
+    },
+    deleteTodo: (id) => {
+      dispatch(deleteTodo(id))
+    },
+    clearCompleted: () => {
+      dispatch(clearCompleted())
+    }
+  }
+}
+
+export default withRouter(connect(mapStateToProps,mapDispatchToProps)(App));
